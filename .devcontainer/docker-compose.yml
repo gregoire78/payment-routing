@@ -1,0 +1,70 @@
+volumes:
+  postgres-data:
+  mq-data:
+
+services:
+  app:
+    container_name: app
+    image: mcr.microsoft.com/devcontainers/base:trixie
+    environment:
+      # NOTE: POSTGRES_DB/USER/PASSWORD should match values in db container
+        POSTGRES_PASSWORD: postgres
+        POSTGRES_USER: postgres
+        POSTGRES_DB: postgres
+        POSTGRES_HOSTNAME: db
+
+    volumes:
+      - ../..:/workspaces:cached
+      
+    # Overrides default command so things don't shut down after the process ends.
+    command: sleep infinity
+
+    # Use proper Docker networking instead of network_mode: service:db
+    # to ensure reliable DNS resolution in all environments
+    depends_on:
+      db:
+        condition: service_healthy
+      ibmmq:
+        condition: service_started
+
+    # Use "forwardPorts" in **devcontainer.json** to forward an app port locally. 
+    # (Adding the "ports" property to this file will not forward from a Codespace.)
+
+  ibmmq:
+    image: icr.io/ibm-messaging/mq:latest
+    container_name: ibmmq
+    restart: unless-stopped
+
+    environment:
+      LICENSE: accept
+      MQ_QMGR_NAME: QM1
+      MQ_ADMIN_PASSWORD: adminpass
+      MQ_APP_PASSWORD: passw0rd
+
+    ports:
+      - 1414:1414
+      - 9443:9443
+
+    volumes:
+      - mq-data:/mnt/mqm
+
+  db:
+    container_name: db
+    image: postgres:latest
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    environment:
+      # NOTE: POSTGRES_DB/USER/PASSWORD should match values in app container
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+
+    # Add "forwardPorts": ["5432"] to **devcontainer.json** to forward PostgreSQL locally.
+    # (Adding the "ports" property to this file will not forward from a Codespace.)

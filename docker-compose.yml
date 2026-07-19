@@ -1,0 +1,58 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    environment:
+      POSTGRES_HOSTNAME: db
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      DB_POOL_SIZE: 16
+      IBM_MQ_CONN_NAME: ibmmq(1414)
+      IBM_MQ_QUEUE_MANAGER: QM1
+      IBM_MQ_CHANNEL: DEV.APP.SVRCONN
+      IBM_MQ_QUEUE_NAME: DEV.QUEUE.1
+      IBM_MQ_USER: app
+      IBM_MQ_PASSWORD: passw0rd
+      APP_MQ_LISTENER_ENABLED: "true"
+      APP_MQ_LISTENER_CONCURRENCY: 2-6
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+      ibmmq:
+        condition: service_started
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ibmmq:
+    image: icr.io/ibm-messaging/mq:latest
+    environment:
+      LICENSE: accept
+      MQ_QMGR_NAME: QM1
+      MQ_ADMIN_PASSWORD: adminpass
+      MQ_APP_PASSWORD: passw0rd
+    ports:
+      - "1414:1414"
+      - "9443:9443"

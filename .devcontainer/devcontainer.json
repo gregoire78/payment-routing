@@ -1,0 +1,44 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/java-postgres
+{
+	"name": "payment-routing",
+	"dockerComposeFile": "docker-compose.yml",
+	"service": "app",
+	"runServices": ["app", "db", "ibmmq"],
+	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+	"forwardPorts": ["app:4200", "app:8080", "db:5432", "ibmmq:1414", "ibmmq:9443"],
+
+	// Features to add to the dev container. More info: https://containers.dev/features.
+	"features": {
+		"ghcr.io/devcontainers/features/node:2": {
+			"nodeGypDependencies": true,
+			"version": "22",
+			"npmVersion": "10.9.0"
+		},
+		"ghcr.io/devcontainers/features/java:1.8.0": {
+			"installMaven": true,
+			"version": "latest",
+			"jdkDistro": "tem",
+			"mavenVersion": "3.8.6"
+		}
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"vscjava.vscode-spring-initializr",
+				"cweijan.vscode-postgresql-client2",
+				"bruno-api-client.bruno",
+				"ms-azuretools.vscode-containers"
+			]
+		}
+	},
+
+	// Use 'postCreateCommand' to run commands after the container is created.
+	// "postCreateCommand": "java -version",
+
+	// Configure tool-specific properties.
+	// "customizations": {},
+
+	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	// "remoteUser": "root"
+}
