@@ -1,0 +1,8 @@
+<label class="field-label" [for]="id">{{ label }}</label>
+<textarea
+	class="field-textarea"
+	[id]="id"
+	[rows]="rows"
+	[value]="value"
+	(input)="onValueChange($event)"
+></textarea>

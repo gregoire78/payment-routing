@@ -1,0 +1,11 @@
+@if (message) {
+	<section class="card" aria-labelledby="detail-title">
+		<h2 id="detail-title" class="title">Detail message</h2>
+		<p><strong>ID:</strong> {{ message.id }}</p>
+		<p><strong>External ID:</strong> {{ message.externalMessageId }}</p>
+		<p><strong>Status:</strong> {{ message.status }}</p>
+		<p><strong>Received At:</strong> {{ message.receivedAt }}</p>
+		<p><strong>Payload:</strong></p>
+		<pre class="payload">{{ message.payload }}</pre>
+	</section>
+}

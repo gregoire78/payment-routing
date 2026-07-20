@@ -1,0 +1,18 @@
+<section class="card" aria-labelledby="messages-title">
+	<div class="header-row">
+		<h2 id="messages-title" class="title">Messages</h2>
+		<app-primary-button (pressed)="refresh.emit()">Rafraichir</app-primary-button>
+	</div>
+
+	@if (loading) {
+		<p class="loading">Chargement...</p>
+	}
+
+	@if (error) {
+		<p class="error">{{ error }}</p>
+	}
+
+	@if (!loading) {
+		<app-message-list [messages]="messages" (messageSelected)="viewMessage.emit($event)" />
+	}
+</section>

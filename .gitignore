@@ -1,0 +1,18 @@
+# Logs
+mqjms.log.*
+*.lck
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# Build
+target/
+node_modules/
+dist/
+build/
+
+# OS
+.DS_Store
+Thumbs.db

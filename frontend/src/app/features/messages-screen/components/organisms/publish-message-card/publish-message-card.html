@@ -1,0 +1,16 @@
+<section class="card" aria-labelledby="publish-title">
+	<h2 id="publish-title" class="title">Publier un message</h2>
+
+	<app-publish-form
+		[externalMessageId]="externalMessageId"
+		[payload]="payload"
+		[canPublish]="canPublish"
+		(externalMessageIdChange)="externalMessageIdChange.emit($event)"
+		(payloadChange)="payloadChange.emit($event)"
+		(publish)="publish.emit()"
+	/>
+
+	@if (publishResponse) {
+		<p class="ok">{{ publishResponse }}</p>
+	}
+</section>

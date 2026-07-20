@@ -3,7 +3,7 @@
 ## Structure
 
 - [backend](backend): application Spring Boot 4 avec API REST, JPA et configuration IBM MQ
-- [frontend](frontend): application Angular 22 minimale pour consulter les messages
+- [frontend](frontend): application Angular 22 minimale pour consulter les messages et publier
 - [docker-compose.yml](docker-compose.yml): stack locale backend/frontend/postgres/ibmmq
 
 ## Fonctionnalités disponibles
@@ -25,6 +25,8 @@
 - PostgreSQL et IBM MQ
 
 Le devcontainer fourni contient PostgreSQL et IBM MQ via [docker-compose du devcontainer](.devcontainer/docker-compose.yml).
+
+Pour travailler sur ce projet, j'utilise le devcontainer VS Code.
 
 ## Utilisation du devcontainer
 
@@ -117,7 +119,7 @@ Le frontend démarre par défaut sur http://localhost:4200.
 
 Le proxy Angular redirige automatiquement /api vers http://localhost:8080.
 
-## Test rapide
+## API
 
 ### Vérifier la santé du backend
 
@@ -148,9 +150,7 @@ Puis vérifier qu'il est visible via l'API de consultation:
 curl http://localhost:8080/api/messages
 ```
 
-Au premier démarrage, un message seed est inséré automatiquement pour faciliter la vérification de bout en bout.
-
-## Variables principales
+## Variables
 
 Backend:
 
@@ -176,13 +176,13 @@ cd backend
 APP_MQ_LISTENER_ENABLED=true APP_MQ_LISTENER_CONCURRENCY=2-6 mvn spring-boot:run
 ```
 
-## Démarrage avec Docker
+## Démarrage recommandé avec le devcontainer
 
-Si Docker est disponible sur la machine hôte:
+1. Ouvrir le repository dans VS Code.
+2. Lancer la commande Reopen in Container.
+3. Attendre le démarrage complet des services du devcontainer.
 
-```bash
-docker compose up --build
-```
+La stack applicative peut aussi être lancée localement si besoin.
 
 La stack expose:
 
@@ -190,11 +190,3 @@ La stack expose:
 - backend: http://localhost:8080
 - postgres: localhost:5432
 - ibmmq: localhost:1414
-
-## Limites de cette première itération
-
-- pas encore de consommation effective depuis une file IBM MQ
-- pas encore de logique de routage métier
-- pas encore de retry/DLQ
-- pas encore de manifests Kubernetes
-- pas encore de tests de charge

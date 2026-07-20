@@ -1,0 +1,13 @@
+@reference "tailwindcss";
+
+:host {
+	@apply block;
+}
+
+.field-label {
+	@apply mt-2 mb-1 block font-semibold;
+}
+
+.field-textarea {
+	@apply box-border w-full rounded-md border border-[#bfbfbf] p-2;
+}

@@ -1,0 +1,9 @@
+<ul class="list">
+	@for (message of messages; track message.id) {
+		<li class="list-item">
+			<button class="message-button" type="button" (click)="messageSelected.emit(message.id)">
+				#{{ message.id }} - {{ message.externalMessageId }} - {{ message.status }}
+			</button>
+		</li>
+	}
+</ul>

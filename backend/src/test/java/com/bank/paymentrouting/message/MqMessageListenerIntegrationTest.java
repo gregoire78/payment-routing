@@ -11,14 +11,22 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.jms.core.JmsTemplate;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 
+import com.bank.paymentrouting.message.domain.MessageStatus;
+import com.bank.paymentrouting.message.infrastructure.persistence.PersistedMessageEntity;
+import com.bank.paymentrouting.message.infrastructure.persistence.PersistedMessageRepository;
+
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
+@Tag("integration")
+@ActiveProfiles("test")
 @TestPropertySource(properties = {
         "app.mq.listener-enabled=true",
         "app.demo.seed-enabled=false",
@@ -32,7 +40,7 @@ class MqMessageListenerIntegrationTest {
     private JmsTemplate jmsTemplate;
 
     @Autowired
-    private RoutedMessageRepository routedMessageRepository;
+    private PersistedMessageRepository routedMessageRepository;
 
     @LocalServerPort
     private int port;
@@ -43,7 +51,7 @@ class MqMessageListenerIntegrationTest {
     }
 
     @Test
-    void shouldConsumeMqMessageAndPersistIt() {
+    void testConsumeMqMessageAndPersistIt() {
         String externalMessageId = "IT-MQ-" + UUID.randomUUID();
         String payload = "{\"type\":\"PAYMENT\",\"amount\":99.99}";
 
@@ -53,7 +61,7 @@ class MqMessageListenerIntegrationTest {
             return message;
         });
 
-        RoutedMessage storedMessage = awaitMessage(externalMessageId, Duration.ofSeconds(10));
+        PersistedMessageEntity storedMessage = awaitMessage(externalMessageId, Duration.ofSeconds(10));
 
         assertThat(storedMessage.getExternalMessageId()).isEqualTo(externalMessageId);
         assertThat(storedMessage.getPayload()).isEqualTo(payload);
@@ -61,7 +69,7 @@ class MqMessageListenerIntegrationTest {
     }
 
     @Test
-    void shouldRemainIdempotentWhenSameMessageIsReceivedTwice() {
+    void testRemainIdempotentWhenSameMessageIsReceivedTwice() {
         String externalMessageId = "IT-DUP-" + UUID.randomUUID();
         String payload = "{\"type\":\"PAYMENT\",\"amount\":42.00}";
 
@@ -74,12 +82,12 @@ class MqMessageListenerIntegrationTest {
     }
 
     @Test
-        void shouldExposeMessageViaRestAfterMqConsumption() throws Exception {
+        void testExposeMessageViaRestAfterMqConsumption() throws Exception {
         String externalMessageId = "IT-REST-" + UUID.randomUUID();
         String payload = "{\"type\":\"PAYMENT\",\"amount\":120.00}";
 
         sendWithCorrelationId(externalMessageId, payload);
-        RoutedMessage storedMessage = awaitMessage(externalMessageId, Duration.ofSeconds(10));
+        PersistedMessageEntity storedMessage = awaitMessage(externalMessageId, Duration.ofSeconds(10));
 
         HttpResponse<String> response = httpClient.send(
             HttpRequest.newBuilder()
@@ -97,7 +105,7 @@ class MqMessageListenerIntegrationTest {
     }
 
     @Test
-    void shouldPublishMessageThroughRestAndPersistIt() throws Exception {
+    void testPublishMessageThroughRestAndPersistIt() throws Exception {
         String externalMessageId = "IT-PUBLISH-" + UUID.randomUUID();
         String payload = "{\"type\":\"PAYMENT\",\"amount\":75.50}";
 
@@ -119,7 +127,7 @@ class MqMessageListenerIntegrationTest {
                 assertThat(response.body()).contains("\"status\":\"accepted\"");
                 assertThat(response.body()).contains("\"externalMessageId\":\"" + externalMessageId + "\"");
 
-        RoutedMessage storedMessage = awaitMessage(externalMessageId, Duration.ofSeconds(10));
+        PersistedMessageEntity storedMessage = awaitMessage(externalMessageId, Duration.ofSeconds(10));
 
         assertThat(storedMessage.getPayload()).isEqualTo(payload);
         assertThat(storedMessage.getStatus()).isEqualTo(MessageStatus.RECEIVED);
@@ -133,7 +141,7 @@ class MqMessageListenerIntegrationTest {
         });
     }
 
-    private RoutedMessage awaitMessage(String externalMessageId, Duration timeout) {
+    private PersistedMessageEntity awaitMessage(String externalMessageId, Duration timeout) {
         long deadline = System.nanoTime() + timeout.toNanos();
         while (System.nanoTime() < deadline) {
             var message = routedMessageRepository.findByExternalMessageId(externalMessageId);

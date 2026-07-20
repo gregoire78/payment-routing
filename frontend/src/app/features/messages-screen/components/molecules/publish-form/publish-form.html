@@ -1,0 +1,18 @@
+<app-labeled-input
+	id="externalMessageId"
+	label="External message ID"
+	[value]="externalMessageId"
+	(valueChange)="externalMessageIdChange.emit($event)"
+/>
+
+<app-labeled-textarea
+	id="payload"
+	label="Payload"
+	[rows]="4"
+	[value]="payload"
+	(valueChange)="payloadChange.emit($event)"
+/>
+
+<app-primary-button class="publish-button" [disabled]="!canPublish" (pressed)="publish.emit()"
+	>Publier</app-primary-button
+>

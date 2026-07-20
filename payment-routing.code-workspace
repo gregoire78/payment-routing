@@ -2,12 +2,23 @@
   "folders": [
     {
       "name": "backend",
-      "path": "backend"
+      "path": "backend",
     },
     {
       "name": "frontend",
-      "path": "frontend"
-    }
+      "path": "frontend",
+    },
   ],
-  "settings": {}
+  "settings": {},
+  "launch": {
+    "configurations": [
+      {
+        "type": "java",
+        "name": "PaymentRoutingApplication",
+        "request": "launch",
+        "mainClass": "com.bank.paymentrouting.PaymentRoutingApplication",
+        "projectName": "backend",
+      },
+    ],
+  },
 }

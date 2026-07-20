@@ -1,0 +1,13 @@
+@reference "tailwindcss";
+
+.list {
+	@apply m-0 list-none pl-0;
+}
+
+.list-item + .list-item {
+	@apply mt-2;
+}
+
+.message-button {
+	@apply w-full cursor-pointer rounded-md border border-[#b8c3df] bg-[#f4f7ff] px-3 py-2 text-left text-[#14357d];
+}

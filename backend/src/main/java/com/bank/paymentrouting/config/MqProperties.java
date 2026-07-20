@@ -11,6 +11,11 @@ public record MqProperties(
         String user,
         String password,
         boolean listenerEnabled,
-        String concurrency
+        String concurrency,
+        int publishMaxAttempts,
+        long publishBackoffMs,
+        long publishTimeoutMs,
+        int publishCircuitFailureThreshold,
+        long publishCircuitOpenMs
 ) {
 }

@@ -1,0 +1,9 @@
+@reference "tailwindcss";
+
+:host {
+	@apply block;
+}
+
+.publish-button {
+	@apply mt-[10px] inline-block;
+}

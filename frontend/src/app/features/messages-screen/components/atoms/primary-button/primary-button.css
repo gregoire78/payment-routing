@@ -1,0 +1,9 @@
+@reference "tailwindcss";
+
+.primary-button {
+	@apply cursor-pointer rounded-md border border-[#1f4fbf] bg-[#1f4fbf] px-3 py-2 text-white;
+}
+
+.primary-button:disabled {
+	@apply cursor-not-allowed border-[#a4a4a4] bg-[#a4a4a4];
+}

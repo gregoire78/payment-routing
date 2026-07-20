@@ -28,7 +28,10 @@
 				"vscjava.vscode-spring-initializr",
 				"cweijan.vscode-postgresql-client2",
 				"bruno-api-client.bruno",
-				"ms-azuretools.vscode-containers"
+				"ms-azuretools.vscode-containers",
+				"bradlc.vscode-tailwindcss",
+				"Angular.ng-template",
+				"esbenp.prettier-vscode"
 			]
 		}
 	},

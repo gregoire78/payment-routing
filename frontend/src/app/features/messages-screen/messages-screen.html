@@ -1,0 +1,23 @@
+<main class="page">
+	<h1>Payment Routing</h1>
+
+	<app-publish-message-card
+		[externalMessageId]="externalMessageId()"
+		[payload]="payload()"
+		[canPublish]="canPublish()"
+		[publishResponse]="publishResponse()"
+		(externalMessageIdChange)="onExternalIdChange($event)"
+		(payloadChange)="onPayloadChange($event)"
+		(publish)="publishMessage()"
+	/>
+
+	<app-messages-list-card
+		[loading]="loading()"
+		[error]="error()"
+		[messages]="messages()"
+		(refresh)="loadMessages()"
+		(viewMessage)="viewMessage($event)"
+	/>
+
+	<app-message-detail-card [message]="selectedMessage()" />
+</main>
