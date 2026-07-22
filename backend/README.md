@@ -64,141 +64,109 @@ Les **adaptateurs** sont les implémentations techniques dans l'infrastructure :
 
 ```mermaid
 flowchart TB
-  %% Acteurs externes
-  client[Client REST]
-  mqIn[(Queue MQ Entrée)]
-  mqOut[(Queue MQ Sortie)]
-  db[(Base de données: routed_messages)]
+  %% =========================
+  %% Couche 1 : Infrastructure
+  %% =========================
+  subgraph INFRA[Couche Infrastructure]
+    direction TB
 
-  %% Limites API
-  subgraph API[Infrastructure API]
-    controller[MessageController]
-    request[PublishMessageRequest]
-    view[PaymentMessageResponse]
-    exHandler[MessageExceptionHandler]
+    subgraph INBOUND[Adaptateurs Entrants]
+      REST[API REST Controller]
+      MQIN[MQ Listener]
+    end
+
+    subgraph OUTBOUND[Adaptateurs Sortants]
+      JPA[Adapter Persistance JPA]
+      MQOUT[Adapter Publication MQ]
+      EV[Adapter Publication Evenements]
+    end
+
+    DB[(PostgreSQL)]
+    MQ[(IBM MQ)]
   end
 
-  %% Limites Messagerie
-  subgraph MSG[Infrastructure Messagerie]
-    listener[MqMessageListenerAdapter]
-    producer[MqMessageProducerAdapter]
-  end
-
-  %% Limites Bootstrap
-  subgraph BOOT[Infrastructure Bootstrap]
-    bootstrap[MessageBootstrapDataLoader]
-  end
-
-  %% Limites Adaptateurs
-  subgraph ADAPTERS[Infrastructure Adaptateurs]
-    queryAdapter[JpaPaymentMessageQueryAdapter]
-    storeAdapter[JpaPaymentMessageStoreAdapter]
-    publisherAdapter[MqPaymentMessagePublisherAdapter]
-    eventAdapter[SpringDomainEventPublisherAdapter]
-  end
-
-  %% Limites Persistance
-  subgraph PERSIST[Infrastructure Persistance]
-    repo[PersistedMessageRepository]
-    persistSvc[MessagePersistenceService]
-    mapper[RoutedMessageMapper]
-    entity[PersistedMessageEntity]
-  end
-
-  %% Limites Couche Application
+  %% =========================
+  %% Couche 2 : Application
+  %% =========================
   subgraph APP[Couche Application]
-    ucList[ListMessagesUseCase]
-    ucGet[GetMessageUseCase]
-    ucIngest[IngestMessageUseCase]
-    ucPublish[PublishMessageUseCase]
-    listPort[(ListMessagesPort)]
-    getPort[(GetMessagePort)]
-    publishPort[(PublishMessagePort)]
-    ingestPort[(IngestMessagePort)]
-    recMapper[MessageRecordMapper]
-    rec[PaymentMessageRecord]
-    exNotFound[MessageNotFoundException]
-    queryPort[(PaymentMessageQueryPort)]
-    storePort[(PaymentMessageStorePort)]
-    mqPublishPort[(PaymentMessagePublisherPort)]
-    eventPublishPort[(DomainEventPublisherPort)]
-    eventLogger[MessageDomainEventLogger]
+    direction TB
+
+    subgraph INPUT_PORTS[Ports Entrants]
+      P1[ListMessagesPort]
+      P2[GetMessagePort]
+      P3[PublishMessagePort]
+      P4[IngestMessagePort]
+    end
+
+    subgraph USECASES[Cas d usage]
+      U1[ListMessagesUseCase]
+      U2[GetMessageUseCase]
+      U3[PublishMessageUseCase]
+      U4[IngestMessageUseCase]
+    end
+
+    subgraph OUTPUT_PORTS[Ports Sortants]
+      O1[PaymentMessageQueryPort]
+      O2[PaymentMessageStorePort]
+      O3[PaymentMessagePublisherPort]
+      O4[DomainEventPublisherPort]
+    end
   end
 
-  %% Limites Domaine
+  %% =========================
+  %% Couche 3 : Domaine
+  %% =========================
   subgraph DOMAIN[Couche Domaine]
-    aggregate[PaymentMessage]
-    voExt[ExternalMessageId]
-    voPayload[MessagePayload]
-    status[MessageStatus]
-    ingestSvc[MessageIngestionDomainService]
-    ingestResult[MessageIngestionResult]
-    eventBase[DomainEvent]
-    evtReceived[MessageReceivedEvent]
-    evtPublished[MessagePublishedEvent]
+    direction TB
+    AGG[PaymentMessage]
+    VO1[ExternalMessageId]
+    VO2[MessagePayload]
+    ST[MessageStatus]
+    DS[MessageIngestionDomainService]
+    DE[Domain Events]
   end
 
-  %% Flux lecture REST
-  client --> controller
-  controller --> listPort
-  controller --> getPort
-  listPort --> ucList
-  getPort --> ucGet
-  ucList --> queryPort
-  ucGet --> queryPort
-  queryAdapter -.implements.-> queryPort
-  queryAdapter --> repo
-  queryAdapter --> mapper
-  mapper --> aggregate
-  ucList --> recMapper
-  ucGet --> recMapper
-  recMapper --> rec
-  controller --> view
-  ucGet --> exNotFound
-  exHandler --> exNotFound
+  %% Entrants -> Ports entrants -> Use cases
+  REST --> P1
+  REST --> P2
+  REST --> P3
+  MQIN --> P4
 
-  %% Flux publication REST
-  controller --> request
-  controller --> publishPort
-  publishPort --> ucPublish
-  ucPublish --> mqPublishPort
-  ucPublish --> eventPublishPort
-  publisherAdapter -.implements.-> mqPublishPort
-  publisherAdapter --> producer
-  producer --> mqOut
-  ucPublish --> evtPublished
+  P1 --> U1
+  P2 --> U2
+  P3 --> U3
+  P4 --> U4
 
-  %% Flux ingestion MQ
-  mqIn --> listener
-  listener --> ingestPort
-  ingestPort --> ucIngest
-  bootstrap --> ingestPort
-  ucIngest --> ingestSvc
-  ingestSvc --> ingestResult
-  ingestSvc --> aggregate
-  ucIngest --> storePort
-  ucIngest --> eventPublishPort
-  storeAdapter -.implements.-> storePort
-  storeAdapter --> persistSvc
-  persistSvc --> repo
-  persistSvc --> entity
-  repo --> db
-  ucIngest --> evtReceived
+  %% Use cases -> Domaine
+  U1 --> AGG
+  U2 --> AGG
+  U3 --> AGG
+  U4 --> DS
+  DS --> AGG
+  AGG --> VO1
+  AGG --> VO2
+  AGG --> ST
+  U3 --> DE
+  U4 --> DE
 
-  %% Flux publication événements domaine
-  ucIngest --> eventAdapter
-  ucPublish --> eventAdapter
-  eventAdapter -.implements.-> eventPublishPort
-  eventAdapter --> eventBase
-  eventBase --> evtReceived
-  eventBase --> evtPublished
-  eventLogger --> evtReceived
-  eventLogger --> evtPublished
+  %% Use cases -> Ports sortants
+  U1 --> O1
+  U2 --> O1
+  U4 --> O2
+  U3 --> O3
+  U3 --> O4
+  U4 --> O4
 
-  %% Internals du domaine
-  aggregate --> voExt
-  aggregate --> voPayload
-  aggregate --> status
+  %% Adaptateurs sortants implementent les ports
+  JPA --> O1
+  JPA --> O2
+  MQOUT --> O3
+  EV --> O4
+
+  %% Connexions techniques externes
+  JPA --> DB
+  MQOUT --> MQ
+  MQ --> MQIN
 ```
 
 ## Responsabilités des Couches
