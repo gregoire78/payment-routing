@@ -41,10 +41,6 @@ services:
       MQ_ADMIN_PASSWORD: adminpass
       MQ_APP_PASSWORD: passw0rd
 
-    ports:
-      - 1414:1414
-      - 9443:9443
-
     volumes:
       - mq-data:/mnt/mqm
 
