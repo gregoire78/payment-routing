@@ -6,7 +6,7 @@
 	"service": "app",
 	"runServices": ["app", "db", "ibmmq"],
 	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
-	"forwardPorts": ["app:4200", "app:8080", "db:5432", "ibmmq:1414", "ibmmq:9443"],
+	"forwardPorts": [4200, 8080, "db:5432", "ibmmq:1414", "ibmmq:9443"],
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	"features": {
@@ -33,6 +33,16 @@
 				"Angular.ng-template",
 				"esbenp.prettier-vscode"
 			]
+		}
+	},
+	"portsAttributes": {
+		"4200": {
+			"label": "frontend",
+			"onAutoForward": "notify"
+		},
+		"8080": {
+			"label": "backend",
+			"onAutoForward": "silent"
 		}
 	},
 
