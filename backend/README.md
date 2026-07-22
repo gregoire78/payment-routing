@@ -35,6 +35,7 @@ Les **ports** sont des interfaces définies dans la couche application :
 |------|----------------|-------------|
 | `PaymentMessageQueryPort` | Requêtes en lecture | `JpaPaymentMessageQueryAdapter` |
 | `PaymentMessageStorePort` | Persistance en écriture | `JpaPaymentMessageStoreAdapter` |
+| `IngestMessagePort` | Point d'entrée applicatif pour l'ingestion | `IngestMessageUseCase` |
 | `PaymentMessagePublisherPort` | Publication MQ | `MqPaymentMessagePublisherAdapter` |
 | `DomainEventPublisherPort` | Publication d'événements domaine | `SpringDomainEventPublisherAdapter` |
 
@@ -65,8 +66,8 @@ flowchart TB
 
   %% Limites Messagerie
   subgraph MSG[Infrastructure Messagerie]
-    listener[MqMessageListener]
-    producer[MqMessageProducer]
+    listener[MqMessageListenerAdapter]
+    producer[MqMessageProducerAdapter]
   end
 
   %% Limites Bootstrap
@@ -96,6 +97,7 @@ flowchart TB
     ucGet[GetMessageUseCase]
     ucIngest[IngestMessageUseCase]
     ucPublish[PublishMessageUseCase]
+    ingestPort[(IngestMessagePort)]
     recMapper[MessageRecordMapper]
     rec[PaymentMessageRecord]
     exNotFound[MessageNotFoundException]
@@ -144,8 +146,9 @@ flowchart TB
 
   %% Flux ingestion MQ
   mqIn --> listener
-  listener --> ucIngest
-  bootstrap --> ucIngest
+  listener --> ingestPort
+  ingestPort --> ucIngest
+  bootstrap --> ingestPort
   ucIngest --> ingestSvc
   ingestSvc --> ingestResult
   ingestSvc --> aggregate
@@ -190,7 +193,7 @@ Aucun couplage avec les frameworks Spring/JPA/MQ ne doit s'y infiltrer.
 
 Contient les cas d'usage et les contrats de ports :
 - cas d'usage : ingestion, publication, liste, consultation
-- ports : requête/stockage/publication/publication événements
+- ports : ingestion/requête/stockage/publication/publication événements
 - mappage du domaine vers le modèle applicatif (`PaymentMessageRecord` via `MessageRecordMapper`)
 - exception applicative (`MessageNotFoundException`)
 
@@ -198,7 +201,7 @@ Contient les cas d'usage et les contrats de ports :
 
 Contient les implémentations techniques :
 - contrôleurs API et gestionnaires d'exceptions
-- écouteur MQ et producteur
+- adaptateur listener MQ et adaptateur producer MQ
 - entité persistance/référentiel/service/mappage
 - adaptateurs implémentant les ports applicatifs
 - chargeur de données de bootstrap

@@ -11,9 +11,9 @@ import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
-public class MqMessageProducer {
+public class MqMessageProducerAdapter {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(MqMessageProducer.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MqMessageProducerAdapter.class);
 
     private final JmsTemplate jmsTemplate;
     private final MqProperties mqProperties;
@@ -23,11 +23,11 @@ public class MqMessageProducer {
     private long circuitOpenedAtMillis;
 
     @Autowired
-    public MqMessageProducer(JmsTemplate jmsTemplate, MqProperties mqProperties) {
+    public MqMessageProducerAdapter(JmsTemplate jmsTemplate, MqProperties mqProperties) {
         this(jmsTemplate, mqProperties, Clock.systemUTC());
     }
 
-    MqMessageProducer(JmsTemplate jmsTemplate, MqProperties mqProperties, Clock clock) {
+    MqMessageProducerAdapter(JmsTemplate jmsTemplate, MqProperties mqProperties, Clock clock) {
         this.jmsTemplate = jmsTemplate;
         this.mqProperties = mqProperties;
         this.clock = clock;

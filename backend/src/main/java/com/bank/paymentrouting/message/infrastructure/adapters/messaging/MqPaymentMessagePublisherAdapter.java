@@ -4,22 +4,22 @@ import com.bank.paymentrouting.config.MqProperties;
 import com.bank.paymentrouting.message.application.port.PaymentMessagePublisherPort;
 import com.bank.paymentrouting.message.domain.ExternalMessageId;
 import com.bank.paymentrouting.message.domain.MessagePayload;
-import com.bank.paymentrouting.message.infrastructure.messaging.MqMessageProducer;
+import com.bank.paymentrouting.message.infrastructure.messaging.MqMessageProducerAdapter;
 import org.springframework.stereotype.Component;
 
 @Component
 public class MqPaymentMessagePublisherAdapter implements PaymentMessagePublisherPort {
 
-    private final MqMessageProducer mqMessageProducer;
+    private final MqMessageProducerAdapter mqMessageProducerAdapter;
     private final MqProperties mqProperties;
 
-    public MqPaymentMessagePublisherAdapter(MqMessageProducer mqMessageProducer, MqProperties mqProperties) {
-        this.mqMessageProducer = mqMessageProducer;
+    public MqPaymentMessagePublisherAdapter(MqMessageProducerAdapter mqMessageProducerAdapter, MqProperties mqProperties) {
+        this.mqMessageProducerAdapter = mqMessageProducerAdapter;
         this.mqProperties = mqProperties;
     }
 
     @Override
     public void publish(ExternalMessageId externalMessageId, MessagePayload payload) {
-        mqMessageProducer.publish(mqProperties.queueName(), externalMessageId.value(), payload.value());
+        mqMessageProducerAdapter.publish(mqProperties.queueName(), externalMessageId.value(), payload.value());
     }
 }

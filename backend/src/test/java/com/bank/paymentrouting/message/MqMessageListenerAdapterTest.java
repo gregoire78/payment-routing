@@ -5,8 +5,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.bank.paymentrouting.message.application.usecase.IngestMessageUseCase;
-import com.bank.paymentrouting.message.infrastructure.messaging.MqMessageListener;
+import com.bank.paymentrouting.message.application.port.IngestMessagePort;
+import com.bank.paymentrouting.message.infrastructure.messaging.MqMessageListenerAdapter;
 import jakarta.jms.JMSException;
 import jakarta.jms.Message;
 import org.junit.jupiter.api.DisplayName;
@@ -19,17 +19,17 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("MqMessageListener")
-class MqMessageListenerTest {
+@DisplayName("MqMessageListenerAdapter")
+class MqMessageListenerAdapterTest {
 
     @Mock
-    private IngestMessageUseCase ingestMessageUseCase;
+    private IngestMessagePort ingestMessagePort;
 
     @Mock
     private Message message;
 
     @InjectMocks
-    private MqMessageListener mqMessageListener;
+    private MqMessageListenerAdapter mqMessageListenerAdapter;
 
     @Nested
     @DisplayName("onMessage")
@@ -43,10 +43,10 @@ class MqMessageListenerTest {
             when(message.getJMSCorrelationID()).thenReturn("CORR-001");
 
             // WHEN
-            mqMessageListener.onMessage(message);
+            mqMessageListenerAdapter.onMessage(message);
 
             // THEN
-            verify(ingestMessageUseCase).execute("CORR-001", "payload");
+            verify(ingestMessagePort).execute("CORR-001", "payload");
         }
 
         @Test
@@ -58,10 +58,10 @@ class MqMessageListenerTest {
             when(message.getJMSMessageID()).thenReturn("MSGID-001");
 
             // WHEN
-            mqMessageListener.onMessage(message);
+            mqMessageListenerAdapter.onMessage(message);
 
             // THEN
-            verify(ingestMessageUseCase).execute("MSGID-001", "payload");
+            verify(ingestMessagePort).execute("MSGID-001", "payload");
         }
 
         @Test
@@ -73,11 +73,11 @@ class MqMessageListenerTest {
             when(message.getJMSMessageID()).thenReturn(" ");
 
             // WHEN
-            mqMessageListener.onMessage(message);
+            mqMessageListenerAdapter.onMessage(message);
 
             // THEN
             ArgumentCaptor<String> idCaptor = ArgumentCaptor.forClass(String.class);
-            verify(ingestMessageUseCase).execute(idCaptor.capture(), eq("payload"));
+            verify(ingestMessagePort).execute(idCaptor.capture(), eq("payload"));
             assertThat(idCaptor.getValue()).startsWith("generated-");
         }
     }

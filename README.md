@@ -173,11 +173,11 @@ Backend:
 - APP_CORS_ALLOWED_ORIGINS
 - APP_DEMO_SEED_ENABLED
 
-Le listener MQ est désactivé par défaut en local. Pour l'activer:
+Le listener MQ est activé par défaut en local. Pour le désactiver:
 
 ```bash
 cd backend
-APP_MQ_LISTENER_ENABLED=true APP_MQ_LISTENER_CONCURRENCY=2-6 mvn spring-boot:run
+APP_MQ_LISTENER_ENABLED=false mvn spring-boot:run
 ```
 
 ## Démarrage recommandé avec le devcontainer

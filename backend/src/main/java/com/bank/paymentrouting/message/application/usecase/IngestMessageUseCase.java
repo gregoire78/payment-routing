@@ -3,6 +3,7 @@ package com.bank.paymentrouting.message.application.usecase;
 import java.time.Instant;
 
 import com.bank.paymentrouting.message.application.port.DomainEventPublisherPort;
+import com.bank.paymentrouting.message.application.port.IngestMessagePort;
 import com.bank.paymentrouting.message.domain.MessageIngestionResult;
 import com.bank.paymentrouting.message.domain.event.MessageReceivedEvent;
 import com.bank.paymentrouting.message.application.model.PaymentMessageRecord;
@@ -14,7 +15,7 @@ import com.bank.paymentrouting.message.domain.MessageIngestionDomainService;
 import org.springframework.stereotype.Service;
 
 @Service
-public class IngestMessageUseCase {
+public class IngestMessageUseCase implements IngestMessagePort {
 
     private final PaymentMessageStorePort messageStore;
     private final MessageIngestionDomainService messageIngestionDomainService;
@@ -30,6 +31,7 @@ public class IngestMessageUseCase {
         this.domainEventPublisher = domainEventPublisher;
     }
 
+    @Override
     public PaymentMessageRecord execute(String externalMessageId, String payload) {
         MessageIngestionResult ingestionResult = messageIngestionDomainService.ingest(
                 messageStore,

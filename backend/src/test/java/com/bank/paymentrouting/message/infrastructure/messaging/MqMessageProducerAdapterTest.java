@@ -23,8 +23,8 @@ import org.springframework.jms.JmsException;
 import org.springframework.jms.core.JmsTemplate;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("MqMessageProducer")
-class MqMessageProducerTest {
+@DisplayName("MqMessageProducerAdapter")
+class MqMessageProducerAdapterTest {
 
     @Mock
     private JmsTemplate jmsTemplate;
@@ -58,7 +58,7 @@ class MqMessageProducerTest {
         @DisplayName("retries publish when transient failures happen")
         void testRetriesPublishWhenTransientFailuresHappen() {
             // GIVEN
-            MqMessageProducer producer = new MqMessageProducer(jmsTemplate, newProperties(3, 5), clock);
+                        MqMessageProducerAdapter producer = new MqMessageProducerAdapter(jmsTemplate, newProperties(3, 5), clock);
             doThrow(new JmsException("first") { })
                     .doThrow(new JmsException("second") { })
                     .doNothing()
@@ -76,7 +76,7 @@ class MqMessageProducerTest {
         @DisplayName("opens circuit after configured failures and rejects immediately")
         void testOpensCircuitAfterConfiguredFailuresAndRejectsImmediately() {
             // GIVEN
-            MqMessageProducer producer = new MqMessageProducer(jmsTemplate, newProperties(1, 2), clock);
+                        MqMessageProducerAdapter producer = new MqMessageProducerAdapter(jmsTemplate, newProperties(1, 2), clock);
             doThrow(new JmsException("fail") { })
                     .when(jmsTemplate)
                     .send(eq("DEV.QUEUE.1"), any());
@@ -100,7 +100,7 @@ class MqMessageProducerTest {
         @DisplayName("resets circuit after a successful publish")
         void testResetsCircuitAfterSuccessfulPublish() {
             // GIVEN
-            MqMessageProducer producer = new MqMessageProducer(jmsTemplate, newProperties(2, 2), clock);
+                        MqMessageProducerAdapter producer = new MqMessageProducerAdapter(jmsTemplate, newProperties(2, 2), clock);
             doThrow(new JmsException("fail") { })
                     .doNothing()
                     .doNothing()
