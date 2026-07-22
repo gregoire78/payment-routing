@@ -1,5 +1,11 @@
 # payment-routing
 
+Pour travailler sur ce projet, j'utilise un devcontainer VS Code.
+J'ai également utilisé de l'IA génératif pour les tests et du "refactoring"de code.
+
+Le backend utilise une architecture hexagonale.
+Le frontend utilise une architecure atomique.
+
 ## Structure
 
 - [backend](backend): application Spring Boot 4 avec API REST, JPA et configuration IBM MQ
@@ -25,8 +31,6 @@
 - PostgreSQL et IBM MQ
 
 Le devcontainer fourni contient PostgreSQL et IBM MQ via [docker-compose du devcontainer](.devcontainer/docker-compose.yml).
-
-Pour travailler sur ce projet, j'utilise le devcontainer VS Code.
 
 ## Utilisation du devcontainer
 

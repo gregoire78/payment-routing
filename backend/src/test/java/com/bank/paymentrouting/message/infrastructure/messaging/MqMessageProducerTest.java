@@ -83,9 +83,12 @@ class MqMessageProducerTest {
 
             // WHEN / THEN
             assertThatThrownBy(() -> producer.publish("DEV.QUEUE.1", "MSG-001", "payload"))
-                    .isInstanceOf(RuntimeException.class);
+                    .isInstanceOf(JmsException.class)
+                    .hasMessageContaining("fail");
             assertThatThrownBy(() -> producer.publish("DEV.QUEUE.1", "MSG-001", "payload"))
-                    .isInstanceOf(RuntimeException.class);
+                    .isInstanceOf(JmsException.class)
+                    .hasMessageContaining("fail");
+
             assertThatThrownBy(() -> producer.publish("DEV.QUEUE.1", "MSG-001", "payload"))
                     .isInstanceOf(IllegalStateException.class)
                     .hasMessageContaining("circuit is open");

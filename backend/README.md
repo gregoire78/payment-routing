@@ -1,27 +1,61 @@
-# Payment Routing Backend
+# Backend Routage des Paiements
 
-## Tech Stack
+## Stack Technologique
 
 - Java 21+
 - Spring Boot
 - Spring Web
 - Spring Data JPA
 - Spring JMS
-- IBM MQ Jakarta client
+- Client IBM MQ Jakarta
 - Maven + JaCoCo
 - JUnit 5 + Mockito
 
 ## Architecture
 
+### Approche : Architecture Hexagonale (Ports et Adaptateurs)
+
+Cette application suit une **architecture hexagonale** (aussi appelée ports et adaptateurs) qui organise le code en trois couches concentriques :
+
+1. **Cœur du Domaine** (au centre) : contient la logique métier pure, indépendante de tout framework
+2. **Couche Application** (anneau intermédiaire) : définit les **ports** (interfaces d'abstraction) et les cas d'usage
+3. **Infrastructure** (anneau externe) : implémente les **adaptateurs** qui connectent le domaine aux systèmes externes (MQ, BDD, API, etc.)
+
+**Avantages** :
+- ✅ Testabilité : le domaine ne dépend d'aucun framework
+- ✅ Flexibilité : remplacer MQ par Kafka, JDBC par JPA, sans toucher au domaine
+- ✅ Maintenabilité : les responsabilités sont clairement séparées
+- ✅ Indépendance de la technologie : l'implémentation technique est isolée
+
+### Ports et Adaptateurs
+
+Les **ports** sont des interfaces définies dans la couche application :
+
+| Port | Responsabilité | Adaptateurs |
+|------|----------------|-------------|
+| `PaymentMessageQueryPort` | Requêtes en lecture | `JpaPaymentMessageQueryAdapter` |
+| `PaymentMessageStorePort` | Persistance en écriture | `JpaPaymentMessageStoreAdapter` |
+| `PaymentMessagePublisherPort` | Publication MQ | `MqPaymentMessagePublisherAdapter` |
+| `DomainEventPublisherPort` | Publication d'événements domaine | `SpringDomainEventPublisherAdapter` |
+
+Les **adaptateurs** sont les implémentations techniques dans l'infrastructure :
+- Adaptateur JPA pour la persistance → utilise Spring Data JPA + Hibernate
+- Adaptateur MQ pour la publication → utilise IBM MQ Jakarta client
+- Adaptateur Spring pour les événements domaine → utilise Spring Events
+
+**Bénéfice** : Si demain on change MQ pour Kafka, on crée un nouvel adaptateur sans modifier le cœur métier.
+
+### Diagramme Architecture
+
 ```mermaid
 flowchart TB
-  %% External actors
-  client[REST Client]
-  mqIn[(MQ Queue In)]
-  mqOut[(MQ Queue Out)]
-  db[(Database: routed_messages)]
+  %% Acteurs externes
+  client[Client REST]
+  mqIn[(Queue MQ Entrée)]
+  mqOut[(Queue MQ Sortie)]
+  db[(Base de données: routed_messages)]
 
-  %% API boundary
+  %% Limites API
   subgraph API[Infrastructure API]
     controller[MessageController]
     request[PublishMessageRequest]
@@ -29,35 +63,35 @@ flowchart TB
     exHandler[MessageExceptionHandler]
   end
 
-  %% Messaging boundary
-  subgraph MSG[Infrastructure Messaging]
+  %% Limites Messagerie
+  subgraph MSG[Infrastructure Messagerie]
     listener[MqMessageListener]
     producer[MqMessageProducer]
   end
 
-  %% Bootstrap boundary
+  %% Limites Bootstrap
   subgraph BOOT[Infrastructure Bootstrap]
     bootstrap[MessageBootstrapDataLoader]
   end
 
-  %% Adapters boundary
-  subgraph ADAPTERS[Infrastructure Adapters]
+  %% Limites Adaptateurs
+  subgraph ADAPTERS[Infrastructure Adaptateurs]
     queryAdapter[JpaPaymentMessageQueryAdapter]
     storeAdapter[JpaPaymentMessageStoreAdapter]
     publisherAdapter[MqPaymentMessagePublisherAdapter]
     eventAdapter[SpringDomainEventPublisherAdapter]
   end
 
-  %% Persistence boundary
-  subgraph PERSIST[Infrastructure Persistence]
+  %% Limites Persistance
+  subgraph PERSIST[Infrastructure Persistance]
     repo[PersistedMessageRepository]
     persistSvc[MessagePersistenceService]
     mapper[RoutedMessageMapper]
     entity[PersistedMessageEntity]
   end
 
-  %% Application boundary
-  subgraph APP[Application Layer]
+  %% Limites Couche Application
+  subgraph APP[Couche Application]
     ucList[ListMessagesUseCase]
     ucGet[GetMessageUseCase]
     ucIngest[IngestMessageUseCase]
@@ -69,8 +103,8 @@ flowchart TB
     eventLogger[MessageDomainEventLogger]
   end
 
-  %% Domain boundary
-  subgraph DOMAIN[Domain Layer]
+  %% Limites Domaine
+  subgraph DOMAIN[Couche Domaine]
     aggregate[PaymentMessage]
     voExt[ExternalMessageId]
     voPayload[MessagePayload]
@@ -82,7 +116,7 @@ flowchart TB
     evtPublished[MessagePublishedEvent]
   end
 
-  %% REST read flow
+  %% Flux lecture REST
   client --> controller
   controller --> ucList
   controller --> ucGet
@@ -99,7 +133,7 @@ flowchart TB
   ucGet --> exNotFound
   exHandler --> exNotFound
 
-  %% REST publish flow
+  %% Flux publication REST
   controller --> request
   controller --> ucPublish
   ucPublish --> ports
@@ -108,7 +142,7 @@ flowchart TB
   producer --> mqOut
   ucPublish --> evtPublished
 
-  %% MQ ingest flow
+  %% Flux ingestion MQ
   mqIn --> listener
   listener --> ucIngest
   bootstrap --> ucIngest
@@ -123,7 +157,7 @@ flowchart TB
   repo --> db
   ucIngest --> evtReceived
 
-  %% Domain event publication flow
+  %% Flux publication événements domaine
   ucIngest --> eventAdapter
   ucPublish --> eventAdapter
   eventAdapter -.implements.-> ports
@@ -133,114 +167,43 @@ flowchart TB
   eventLogger --> evtReceived
   eventLogger --> evtPublished
 
-  %% Domain internals
+  %% Internals du domaine
   aggregate --> voExt
   aggregate --> voPayload
   aggregate --> status
 ```
 
-## Layer Responsibilities
+## Responsabilités des Couches
 
-### Domain
+### Domaine
 
-Contains business rules and invariants:
-- aggregate: `PaymentMessage`
-- value objects: `ExternalMessageId`, `MessagePayload`
-- state model: `MessageStatus`
-- domain service: `MessageIngestionDomainService`
-- domain events: `MessageReceivedEvent`, `MessagePublishedEvent`
+Contient les règles métier et les invariants :
+- agrégat : `PaymentMessage`
+- objets de valeur : `ExternalMessageId`, `MessagePayload`
+- modèle d'état : `MessageStatus`
+- service de domaine : `MessageIngestionDomainService`
+- événements de domaine : `MessageReceivedEvent`, `MessagePublishedEvent`
 
-No Spring/JPA/MQ framework coupling should leak here.
+Aucun couplage avec les frameworks Spring/JPA/MQ ne doit s'y infiltrer.
 
 ### Application
 
-Contains use cases and port contracts:
-- use cases: ingest, publish, list, get
-- ports: query/store/publisher/event publisher
-- mapping from domain to application model (`PaymentMessageRecord` via `MessageRecordMapper`)
-- application exception (`MessageNotFoundException`)
+Contient les cas d'usage et les contrats de ports :
+- cas d'usage : ingestion, publication, liste, consultation
+- ports : requête/stockage/publication/publication événements
+- mappage du domaine vers le modèle applicatif (`PaymentMessageRecord` via `MessageRecordMapper`)
+- exception applicative (`MessageNotFoundException`)
 
 ### Infrastructure
 
-Contains technical implementations:
-- API controllers and exception handlers
-- MQ listener and producer
-- persistence entity/repository/service/mapper
-- adapters implementing application ports
-- bootstrap data loader
+Contient les implémentations techniques :
+- contrôleurs API et gestionnaires d'exceptions
+- écouteur MQ et producteur
+- entité persistance/référentiel/service/mappage
+- adaptateurs implémentant les ports applicatifs
+- chargeur de données de bootstrap
 
-## Main Runtime Flows
-
-### 1) Ingestion from MQ
-
-```mermaid
-sequenceDiagram
-  participant MQ as MQ Queue In
-  participant L as MqMessageListener
-  participant U as IngestMessageUseCase
-  participant D as MessageIngestionDomainService
-  participant S as JpaPaymentMessageStoreAdapter
-  participant P as MessagePersistenceService
-  participant R as PersistedMessageRepository
-  participant E as SpringDomainEventPublisherAdapter
-
-  MQ->>L: JMS message
-  L->>U: execute(externalMessageId, payload)
-  U->>D: ingest(store, ExternalMessageId, MessagePayload)
-  D->>S: findByExternalMessageId(...)
-  alt message exists
-    D-->>U: MessageIngestionResult(existing, false)
-  else new message
-    D->>S: insertReceivedMessage(...)
-    S->>P: insertReceivedMessage(...)
-    P->>R: saveAndFlush(PersistedMessageEntity)
-    D-->>U: MessageIngestionResult(new, true)
-    U->>E: publish(MessageReceivedEvent)
-  end
-```
-
-### 2) Publication through REST
-
-```mermaid
-sequenceDiagram
-  participant C as REST Client
-  participant API as MessageController
-  participant U as PublishMessageUseCase
-  participant A as MqPaymentMessagePublisherAdapter
-  participant M as MqMessageProducer
-  participant Q as MQ Queue Out
-  participant E as SpringDomainEventPublisherAdapter
-
-  C->>API: POST /api/messages/publish
-  API->>U: execute(externalMessageId, payload)
-  U->>A: publish(ExternalMessageId, MessagePayload)
-  A->>M: publish(queueName, externalMessageId, payload)
-  M->>Q: JMS send
-  U->>E: publish(MessagePublishedEvent)
-  API-->>C: 202 Accepted
-```
-
-### 3) Read messages through REST
-
-```mermaid
-sequenceDiagram
-  participant C as REST Client
-  participant API as MessageController
-  participant U as Get/List UseCase
-  participant A as JpaPaymentMessageQueryAdapter
-  participant R as PersistedMessageRepository
-  participant M as RoutedMessageMapper
-
-  C->>API: GET /api/messages or /api/messages/{id}
-  API->>U: execute(...)
-  U->>A: query through PaymentMessageQueryPort
-  A->>R: findAll(pageable) / findById(id)
-  A->>M: toDomain(...)
-  U-->>API: PaymentMessageRecord
-  API-->>C: PaymentMessageResponse JSON
-```
-
-## Persistence Model
+## Modèle
 
 ```mermaid
 erDiagram
@@ -252,47 +215,3 @@ erDiagram
     TIMESTAMP received_at
   }
 ```
-
-## Package Structure
-
-```text
-src/main/java/com/bank/paymentrouting
-  config/
-  message/
-    domain/
-      event/
-    application/
-      exception/
-      mapper/
-      model/
-      port/
-      usecase/
-    infrastructure/
-      api/
-      adapters/
-        event/
-        messaging/
-        persistence/
-      bootstrap/
-      messaging/
-      persistence/
-        mapper/
-```
-
-## Build and Test
-
-From `backend/`:
-
-```bash
-mvn clean verify
-```
-
-Artifacts:
-- unit and integration tests executed via Maven lifecycle
-- coverage report in `target/site/jacoco/index.html`
-
-## Notes
-
-- API contract remains under `/api/messages`.
-- MQ listener can be toggled with `app.mq.listener-enabled`.
-- Bootstrap seeding can be toggled with `app.demo.seed-enabled`.
