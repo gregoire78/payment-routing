@@ -29,13 +29,27 @@ Cette application suit une **architecture hexagonale** (aussi appelée ports et 
 
 ### Ports et Adaptateurs
 
-Les **ports** sont des interfaces définies dans la couche application :
+Les **ports** sont des interfaces définies dans la couche application.
+On distingue :
+
+- **Ports entrants (input ports)** : contrats exposés par les cas d'usage
+- **Ports sortants (output ports)** : contrats requis par les cas d'usage vers l'infrastructure
+
+Ports entrants :
+
+| Port | Responsabilité | Implémentation |
+|------|----------------|----------------|
+| `IngestMessagePort` | Point d'entrée applicatif pour l'ingestion | `IngestMessageUseCase` |
+| `ListMessagesPort` | Point d'entrée applicatif pour la liste | `ListMessagesUseCase` |
+| `GetMessagePort` | Point d'entrée applicatif pour la consultation | `GetMessageUseCase` |
+| `PublishMessagePort` | Point d'entrée applicatif pour la publication | `PublishMessageUseCase` |
+
+Ports sortants :
 
 | Port | Responsabilité | Adaptateurs |
 |------|----------------|-------------|
 | `PaymentMessageQueryPort` | Requêtes en lecture | `JpaPaymentMessageQueryAdapter` |
 | `PaymentMessageStorePort` | Persistance en écriture | `JpaPaymentMessageStoreAdapter` |
-| `IngestMessagePort` | Point d'entrée applicatif pour l'ingestion | `IngestMessageUseCase` |
 | `PaymentMessagePublisherPort` | Publication MQ | `MqPaymentMessagePublisherAdapter` |
 | `DomainEventPublisherPort` | Publication d'événements domaine | `SpringDomainEventPublisherAdapter` |
 
@@ -97,11 +111,17 @@ flowchart TB
     ucGet[GetMessageUseCase]
     ucIngest[IngestMessageUseCase]
     ucPublish[PublishMessageUseCase]
+    listPort[(ListMessagesPort)]
+    getPort[(GetMessagePort)]
+    publishPort[(PublishMessagePort)]
     ingestPort[(IngestMessagePort)]
     recMapper[MessageRecordMapper]
     rec[PaymentMessageRecord]
     exNotFound[MessageNotFoundException]
-    ports[(Ports: PaymentMessageQueryPort / PaymentMessageStorePort / PaymentMessagePublisherPort / DomainEventPublisherPort)]
+    queryPort[(PaymentMessageQueryPort)]
+    storePort[(PaymentMessageStorePort)]
+    mqPublishPort[(PaymentMessagePublisherPort)]
+    eventPublishPort[(DomainEventPublisherPort)]
     eventLogger[MessageDomainEventLogger]
   end
 
@@ -120,11 +140,13 @@ flowchart TB
 
   %% Flux lecture REST
   client --> controller
-  controller --> ucList
-  controller --> ucGet
-  ucList --> ports
-  ucGet --> ports
-  queryAdapter -.implements.-> ports
+  controller --> listPort
+  controller --> getPort
+  listPort --> ucList
+  getPort --> ucGet
+  ucList --> queryPort
+  ucGet --> queryPort
+  queryAdapter -.implements.-> queryPort
   queryAdapter --> repo
   queryAdapter --> mapper
   mapper --> aggregate
@@ -137,9 +159,11 @@ flowchart TB
 
   %% Flux publication REST
   controller --> request
-  controller --> ucPublish
-  ucPublish --> ports
-  publisherAdapter -.implements.-> ports
+  controller --> publishPort
+  publishPort --> ucPublish
+  ucPublish --> mqPublishPort
+  ucPublish --> eventPublishPort
+  publisherAdapter -.implements.-> mqPublishPort
   publisherAdapter --> producer
   producer --> mqOut
   ucPublish --> evtPublished
@@ -152,8 +176,9 @@ flowchart TB
   ucIngest --> ingestSvc
   ingestSvc --> ingestResult
   ingestSvc --> aggregate
-  ucIngest --> ports
-  storeAdapter -.implements.-> ports
+  ucIngest --> storePort
+  ucIngest --> eventPublishPort
+  storeAdapter -.implements.-> storePort
   storeAdapter --> persistSvc
   persistSvc --> repo
   persistSvc --> entity
@@ -163,7 +188,7 @@ flowchart TB
   %% Flux publication événements domaine
   ucIngest --> eventAdapter
   ucPublish --> eventAdapter
-  eventAdapter -.implements.-> ports
+  eventAdapter -.implements.-> eventPublishPort
   eventAdapter --> eventBase
   eventBase --> evtReceived
   eventBase --> evtPublished
@@ -193,7 +218,8 @@ Aucun couplage avec les frameworks Spring/JPA/MQ ne doit s'y infiltrer.
 
 Contient les cas d'usage et les contrats de ports :
 - cas d'usage : ingestion, publication, liste, consultation
-- ports : ingestion/requête/stockage/publication/publication événements
+- ports entrants : `IngestMessagePort`, `ListMessagesPort`, `GetMessagePort`, `PublishMessagePort`
+- ports sortants : `PaymentMessageQueryPort`, `PaymentMessageStorePort`, `PaymentMessagePublisherPort`, `DomainEventPublisherPort`
 - mappage du domaine vers le modèle applicatif (`PaymentMessageRecord` via `MessageRecordMapper`)
 - exception applicative (`MessageNotFoundException`)
 

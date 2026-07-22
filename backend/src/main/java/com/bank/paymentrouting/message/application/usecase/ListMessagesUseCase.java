@@ -4,11 +4,12 @@ import java.util.List;
 
 import com.bank.paymentrouting.message.application.mapper.MessageRecordMapper;
 import com.bank.paymentrouting.message.application.model.PaymentMessageRecord;
+import com.bank.paymentrouting.message.application.port.ListMessagesPort;
 import com.bank.paymentrouting.message.application.port.PaymentMessageQueryPort;
 import org.springframework.stereotype.Service;
 
 @Service
-public class ListMessagesUseCase {
+public class ListMessagesUseCase implements ListMessagesPort {
 
     private final PaymentMessageQueryPort messageQueryStore;
     private final MessageRecordMapper messageRecordMapper;
@@ -18,6 +19,7 @@ public class ListMessagesUseCase {
         this.messageRecordMapper = messageRecordMapper;
     }
 
+    @Override
     public List<PaymentMessageRecord> execute(int page, int size) {
         return messageQueryStore.findMessages(page, size)
                 .stream()

@@ -1,9 +1,9 @@
 package com.bank.paymentrouting.message.infrastructure.api;
 
 import com.bank.paymentrouting.message.application.model.PaymentMessageRecord;
-import com.bank.paymentrouting.message.application.usecase.GetMessageUseCase;
-import com.bank.paymentrouting.message.application.usecase.ListMessagesUseCase;
-import com.bank.paymentrouting.message.application.usecase.PublishMessageUseCase;
+import com.bank.paymentrouting.message.application.port.GetMessagePort;
+import com.bank.paymentrouting.message.application.port.ListMessagesPort;
+import com.bank.paymentrouting.message.application.port.PublishMessagePort;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -26,18 +26,18 @@ import static org.springframework.http.HttpStatus.ACCEPTED;
 @RequestMapping("/api/messages")
 public class MessageController {
 
-    private final ListMessagesUseCase listMessagesUseCase;
-    private final GetMessageUseCase getMessageUseCase;
-    private final PublishMessageUseCase publishMessageUseCase;
+    private final ListMessagesPort listMessagesPort;
+    private final GetMessagePort getMessagePort;
+    private final PublishMessagePort publishMessagePort;
 
     public MessageController(
-            ListMessagesUseCase listMessagesUseCase,
-            GetMessageUseCase getMessageUseCase,
-            PublishMessageUseCase publishMessageUseCase
+            ListMessagesPort listMessagesPort,
+            GetMessagePort getMessagePort,
+            PublishMessagePort publishMessagePort
     ) {
-        this.listMessagesUseCase = listMessagesUseCase;
-        this.getMessageUseCase = getMessageUseCase;
-        this.publishMessageUseCase = publishMessageUseCase;
+        this.listMessagesPort = listMessagesPort;
+        this.getMessagePort = getMessagePort;
+        this.publishMessagePort = publishMessagePort;
     }
 
     @GetMapping
@@ -45,7 +45,7 @@ public class MessageController {
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
     ) {
-        return listMessagesUseCase.execute(page, size)
+        return listMessagesPort.execute(page, size)
                 .stream()
                 .map(this::toView)
                 .toList();
@@ -53,13 +53,13 @@ public class MessageController {
 
     @GetMapping("/{id}")
     public PaymentMessageResponse getMessage(@PathVariable long id) {
-        return toView(getMessageUseCase.execute(id));
+        return toView(getMessagePort.execute(id));
     }
 
     @PostMapping("/publish")
     @ResponseStatus(ACCEPTED)
     public Map<String, String> publishMessage(@Valid @RequestBody PublishMessageRequest request) {
-        publishMessageUseCase.execute(request.externalMessageId(), request.payload());
+        publishMessagePort.execute(request.externalMessageId(), request.payload());
         return Map.of(
                 "status", "accepted",
                 "externalMessageId", request.externalMessageId()

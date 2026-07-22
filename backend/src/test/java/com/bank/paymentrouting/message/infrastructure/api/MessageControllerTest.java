@@ -8,10 +8,10 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
+import com.bank.paymentrouting.message.application.port.GetMessagePort;
+import com.bank.paymentrouting.message.application.port.ListMessagesPort;
+import com.bank.paymentrouting.message.application.port.PublishMessagePort;
 import com.bank.paymentrouting.message.application.model.PaymentMessageRecord;
-import com.bank.paymentrouting.message.application.usecase.GetMessageUseCase;
-import com.bank.paymentrouting.message.application.usecase.ListMessagesUseCase;
-import com.bank.paymentrouting.message.application.usecase.PublishMessageUseCase;
 import com.bank.paymentrouting.message.domain.MessageStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -26,13 +26,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class MessageControllerTest {
 
     @Mock
-    private ListMessagesUseCase listMessagesUseCase;
+    private ListMessagesPort listMessagesPort;
 
     @Mock
-    private GetMessageUseCase getMessageUseCase;
+    private GetMessagePort getMessagePort;
 
     @Mock
-    private PublishMessageUseCase publishMessageUseCase;
+    private PublishMessagePort publishMessagePort;
 
     @InjectMocks
     private MessageController messageController;
@@ -52,7 +52,7 @@ class MessageControllerTest {
                     MessageStatus.RECEIVED,
                     Instant.parse("2026-07-10T10:15:30Z")
             );
-            when(listMessagesUseCase.execute(0, 20)).thenReturn(List.of(record));
+                when(listMessagesPort.execute(0, 20)).thenReturn(List.of(record));
 
             // WHEN
             List<PaymentMessageResponse> result = messageController.listMessages(0, 20);
@@ -63,7 +63,7 @@ class MessageControllerTest {
             assertThat(result.getFirst().externalMessageId()).isEqualTo("MSG-010");
             assertThat(result.getFirst().payload()).isEqualTo("payload-10");
             assertThat(result.getFirst().status()).isEqualTo(MessageStatus.RECEIVED);
-            verify(listMessagesUseCase).execute(0, 20);
+            verify(listMessagesPort).execute(0, 20);
         }
     }
 
@@ -82,7 +82,7 @@ class MessageControllerTest {
                     MessageStatus.ROUTED,
                     Instant.parse("2026-07-11T10:15:30Z")
             );
-            when(getMessageUseCase.execute(11L)).thenReturn(record);
+                when(getMessagePort.execute(11L)).thenReturn(record);
 
             // WHEN
             PaymentMessageResponse result = messageController.getMessage(11L);
@@ -91,7 +91,7 @@ class MessageControllerTest {
             assertThat(result.id()).isEqualTo(11L);
             assertThat(result.externalMessageId()).isEqualTo("MSG-011");
             assertThat(result.status()).isEqualTo(MessageStatus.ROUTED);
-            verify(getMessageUseCase).execute(11L);
+            verify(getMessagePort).execute(11L);
         }
     }
 
@@ -109,7 +109,7 @@ class MessageControllerTest {
             Map<String, String> result = messageController.publishMessage(request);
 
             // THEN
-            verify(publishMessageUseCase).execute("MSG-012", "payload-12");
+            verify(publishMessagePort).execute("MSG-012", "payload-12");
             assertThat(result)
                     .containsEntry("status", "accepted")
                     .containsEntry("externalMessageId", "MSG-012");

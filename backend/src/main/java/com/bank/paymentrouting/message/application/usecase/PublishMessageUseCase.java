@@ -4,13 +4,14 @@ import java.time.Instant;
 
 import com.bank.paymentrouting.message.application.port.DomainEventPublisherPort;
 import com.bank.paymentrouting.message.application.port.PaymentMessagePublisherPort;
+import com.bank.paymentrouting.message.application.port.PublishMessagePort;
 import com.bank.paymentrouting.message.domain.ExternalMessageId;
 import com.bank.paymentrouting.message.domain.MessagePayload;
 import com.bank.paymentrouting.message.domain.event.MessagePublishedEvent;
 import org.springframework.stereotype.Service;
 
 @Service
-public class PublishMessageUseCase {
+public class PublishMessageUseCase implements PublishMessagePort {
 
     private final PaymentMessagePublisherPort messagePublisher;
     private final DomainEventPublisherPort domainEventPublisher;
@@ -20,6 +21,7 @@ public class PublishMessageUseCase {
         this.domainEventPublisher = domainEventPublisher;
     }
 
+    @Override
     public void execute(String externalMessageId, String payload) {
         messagePublisher.publish(ExternalMessageId.of(externalMessageId), MessagePayload.of(payload));
         domainEventPublisher.publish(new MessagePublishedEvent(externalMessageId, Instant.now()));
